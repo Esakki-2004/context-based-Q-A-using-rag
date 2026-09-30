@@ -58,10 +58,27 @@ def confidence_bar(score: float) -> str:
 with st.sidebar:
     st.title("🔍 Hybrid RAG")
     st.caption("Context-based QA with SQL + Vector retrieval")
+    st.divider()
 
-    from core.config import OPENAI_API_KEY
-    if not OPENAI_API_KEY or OPENAI_API_KEY == "sk-..." or OPENAI_API_KEY.startswith("sk-..."):
-        st.warning("⚠️ **OpenAI API Key Missing**\nPlease edit `.env` and add your valid `OPENAI_API_KEY`.")
+    # ── API Key Input ──
+    st.subheader("🔑 API Configuration")
+    user_key = st.text_input(
+        "OpenAI API Key",
+        value=st.session_state.get("user_api_key", os.getenv("OPENAI_API_KEY", "") if os.getenv("OPENAI_API_KEY") != "sk-..." else ""),
+        type="password",
+        placeholder="sk-proj-...",
+        help="Paste your OpenAI API key here to enable AI features.",
+    )
+
+    if user_key:
+        st.session_state.user_api_key = user_key.strip()
+        os.environ["OPENAI_API_KEY"] = user_key.strip()
+        import core.config
+        core.config.OPENAI_API_KEY = user_key.strip()
+
+    current_key = os.environ.get("OPENAI_API_KEY", "")
+    if not current_key or current_key == "sk-..." or current_key.startswith("sk-..."):
+        st.warning("⚠️ **OpenAI API Key Missing**\nEnter your key above or edit `.env`.")
 
     st.divider()
 
