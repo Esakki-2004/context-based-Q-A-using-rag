@@ -114,26 +114,36 @@ def _generate_nl_summary(ctx: SchemaContext) -> str:
     if not ctx.tables:
         return "The database appears to be empty."
 
-    client = OpenAI(api_key=OPENAI_API_KEY)
-    schema_text = ctx.as_prompt_context()
+    table_names = ", ".join(t.name for t in ctx.tables)
+    fallback_summary = f"Database contains {len(ctx.tables)} tables: {table_names}."
 
-    response = client.chat.completions.create(
-        model=CHAT_MODEL,
-        messages=[
-            {
-                "role": "system",
-                "content": (
-                    "You are a helpful data analyst. Given a database schema, "
-                    "describe what the database is about in 2-3 sentences. "
-                    "Mention what kind of data it stores and any key relationships."
-                ),
-            },
-            {
-                "role": "user",
-                "content": f"Describe this database:\n\n{schema_text}",
-            },
-        ],
-        max_tokens=200,
-        temperature=0.3,
-    )
-    return response.choices[0].message.content.strip()
+    if not OPENAI_API_KEY or OPENAI_API_KEY.startswith("sk-..."):
+        return f"{fallback_summary} (Add a valid OPENAI_API_KEY to .env for AI summary)"
+
+    try:
+        client = OpenAI(api_key=OPENAI_API_KEY)
+        schema_text = ctx.as_prompt_context()
+
+        response = client.chat.completions.create(
+            model=CHAT_MODEL,
+            messages=[
+                {
+                    "role": "system",
+                    "content": (
+                        "You are a helpful data analyst. Given a database schema, "
+                        "describe what the database is about in 2-3 sentences. "
+                        "Mention what kind of data it stores and any key relationships."
+                    ),
+                },
+                {
+                    "role": "user",
+                    "content": f"Describe this database:\n\n{schema_text}",
+                },
+            ],
+            max_tokens=200,
+            temperature=0.3,
+        )
+        return response.choices[0].message.content.strip()
+    except Exception as e:
+        return f"{fallback_summary} (AI summary unavailable: {e})"
+

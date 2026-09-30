@@ -58,6 +58,11 @@ def confidence_bar(score: float) -> str:
 with st.sidebar:
     st.title("🔍 Hybrid RAG")
     st.caption("Context-based QA with SQL + Vector retrieval")
+
+    from core.config import OPENAI_API_KEY
+    if not OPENAI_API_KEY or OPENAI_API_KEY == "sk-..." or OPENAI_API_KEY.startswith("sk-..."):
+        st.warning("⚠️ **OpenAI API Key Missing**\nPlease edit `.env` and add your valid `OPENAI_API_KEY`.")
+
     st.divider()
 
     # ── DB Upload ──
